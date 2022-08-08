@@ -1,0 +1,9 @@
+
+
+class nfa {
+
+private:
+
+public:
+
+};
