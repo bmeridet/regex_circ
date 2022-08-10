@@ -33,8 +33,8 @@ bool opening (char c) {
 }
 
 bool closing (char c) {
-    static char close[3] = {')', ']', '}'};
-    for (int i = 0; i < 3; ++i) {
+    static char close[1] = {')'};
+    for (int i = 0; i < 1; ++i) {
         if (c == close[i]) return true;
     }
     return false;
@@ -56,26 +56,35 @@ bool digchar (char c) {
 
 // add concat symbol to regex -- ab -> a&b
 std::string parse_tree::add_concat (std::string s) {
-    //std::cout << "Before: " << s << std::endl;
+    std::cout << "Before: " << s << std::endl;
     std::string re = "";
 
+    short set_flag = 0;
+    short esc_flag = 0;
     for (int i = 0; i < (int) s.size() - 1; ++i) {
-        if (s[i] == '\\') { 
+        if (s[i] == '\\') esc_flag = 1;
+        if (s[i] == '[' && !esc_flag) set_flag = 1;
+        if (s[i] == ']' && !esc_flag) set_flag = 0;
+        if (esc_flag) { 
             re += s[i]; 
             re += s[i+1];
+            if (i < (int) s.size() - 2 && !op (s[i+2]) && !closing (s[i+2])) re += '&';
             i++;
-            if (i < (int) s.size() - 2 && !op (s[i+2])) re += '&';
+            esc_flag = 0;
         }
-        else if (unary (s[i])) { re += s[i]; re += '&'; }
-        else if (binary (s[i])) re += s[i];
-        else if (opening (s[i])) re += s[i];
-        else if (closing (s[i]) && !op (s[i+1])) { re += s[i]; re += '&'; }
-        else if (is_input (s[i+1]) || opening (s[i+1])) { re += s[i]; re += '&'; }
+        else if (!set_flag) {
+            if (unary (s[i])) { re += s[i]; re += '&'; }
+            else if (binary (s[i])) re += s[i];
+            else if (opening (s[i])) re += s[i];
+            else if (closing (s[i]) && !op (s[i+1])) { re += s[i]; re += '&'; }
+            else if (is_input (s[i+1]) || opening (s[i+1])) { re += s[i]; re += '&'; }
+            else re += s[i];
+        }
         else re += s[i];
     }
 
     re += s[s.size() - 1];
-    //std::cout << "After: " << re << std::endl;
+    std::cout << "After: " << re << std::endl;
     return re;
 }
 
@@ -188,12 +197,20 @@ tnode* parse_tree::generate_ptree (std::string s) {
     std::string re = add_concat (s);
     
     bool esc_flag = false;
-
+    bool set_flag = false;
     for (int i = 0; i < (int) re.size (); ++i) {
         if (re[i] == '\\') { esc_flag = true; continue; }
+        if (!esc_flag && re[i] == '[') { set_flag = true; continue; }
         if (esc_flag) {
-            push_tnode ("\\" + re[i]);
+            std::string t = "\\"; t += re[i];
+            push_tnode (t);
             esc_flag = false;
+        }
+        else if (set_flag) {
+            std::string t = "";
+            while (re[i] != ']') t += re[i++];
+            push_tnode (t);
+            set_flag = false;
         }
         else if (is_input (re[i])) {
             std::string t (1, re[i]);
@@ -227,8 +244,6 @@ void parse_tree::print (tnode* t) {
     if (t == nullptr) return;
     print (t->left);
     std::cout << t->get_sym ();
-    if (is_input (t->get_sym ()[0])) std::cout << " (module) ";
-    else std::cout << " (wire) ";
     print (t->right);
 }
 
