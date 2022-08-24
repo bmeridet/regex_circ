@@ -1,25 +1,44 @@
 #pragma once
-#include <vector>
 #include <string>
+#include <set>
+#include <vector>
+#include <unordered_map>
 
 class state {
 
 private:
 
-    int sid;
     std::string label;
-    std::vector<state*> in_conn;
-    std::vector<state*> out_conn;
-    state* or_link;
+    int type;
+    int state_id;
+    int visits;
+    static int nstate;
 
 public:
 
-    state ();
+    static const int normal = -1;
+    static const int start = 0;
+    static const int match = 256;
+    static const int split = 257;
+
+    state* out1;
+    state* out2;
+
+    std::vector<state*> out;
+    std::vector<state*> in;
+    static std::unordered_map<std::string, int> bram_lu;
+    static std::vector<state*> modules;
+
+    state (std::string, int, state*, state*);
+
+    std::string get_state ();
+    int get_stateid ();
+    int get_type ();
+    void inc_visit ();
+    int get_visits ();
+
+    static int num_states ();
+    static void traverse (state*);
+    static void print_state (state*);
 
 };
-
-// state id
-// state label
-// out connections
-// in connections
-// or link?

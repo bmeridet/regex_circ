@@ -1,6 +1,6 @@
 CC = g++
 LD = ld
-TARGET = regex_pt
+TARGET = regex_nfa
 LDFLAGS = -W -Xlinker -Map=$(TARGET).map
 CXXFLAGS = -g -Wall
 
